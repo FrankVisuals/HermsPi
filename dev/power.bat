@@ -1,0 +1,1 @@
+echo "power.bat executed" 

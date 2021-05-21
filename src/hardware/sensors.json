@@ -1,0 +1,6 @@
+{
+  "water-kettle": {
+    "description": "Sensor am ersten Kessel. Kontrolliert die Temperatur beim Maischen und Läutern.",
+    "id": "b2-sensor"
+  }
+}

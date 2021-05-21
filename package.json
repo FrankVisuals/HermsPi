@@ -1,0 +1,28 @@
+{
+  "name": "pi-bew",
+  "version": "0.0.1",
+  "description": "Brew Beer!",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "start": "ts-node ./src/index.ts",
+    "build": "rimraf dist && npx tsc",
+    "lint:fix": "npm run lint -- --fix && node ./bin/lint-cds.js",
+    "test": "tsc --project tsconfig.test.json"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.23",
+    "@types/rimraf": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.15.1",
+    "@typescript-eslint/parser": "^4.15.1",
+    "eslint": "^7.20.0",
+    "eslint-import-resolver-typescript": "^2.4.0",
+    "eslint-plugin-import": "^2.18.2",
+    "rimraf": "^3.0.2",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "dotenv": "^9.0.2"
+  }
+}

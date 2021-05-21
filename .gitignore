@@ -1,0 +1,32 @@
+_out
+*.db
+*.db-journal
+connection.properties
+default-*.json
+gen/
+node_modules/
+target/
+dist/
+
+# Web IDE, App Studio
+.che/
+.gen/
+
+# Other
+.DS_Store
+*.orig
+*.log
+
+*.iml
+*.flattened-pom.xml
+
+# IDEs
+.vscode
+.idea
+lsp
+
+*.js
+*.js.map
+*.d.ts
+
+src/types/metaModelSchema.json

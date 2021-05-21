@@ -1,0 +1,19 @@
+node_modules/
+test
+
+tsconfig.test.json
+.eslintrc
+.xmake.cfg
+
+# Other
+.DS_Store
+*.orig
+*.log
+
+*.iml
+*.flattened-pom.xml
+
+# IDEs
+.vscode
+.idea
+lsp
