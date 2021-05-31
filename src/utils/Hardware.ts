@@ -41,7 +41,7 @@ export const TurnPowerOn = async (device: Device): Promise<boolean> => {
 }
 
 export const TurnPowerOff = async (device: Device): Promise<boolean> => {
-  const result = execSync(`${getExecCommand()} 0 ${device.identifier}`)
+  const result = execSync(`${getExecCommand()} ${process.env.ONE_WIRE_PIN} ${device.identifier}`)
 
   return !!result
 }
