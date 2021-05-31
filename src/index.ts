@@ -1,10 +1,7 @@
 import * as dotenv from 'dotenv'
 import { Brew } from './Brew'
-
-import PaleAle from './recipes/PaleAle'
+import alePale from './recipes/AlePale'
 
 dotenv.config()
 
-const brew = new Brew(PaleAle)
-
-brew.start()
+new Brew(alePale)

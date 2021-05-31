@@ -1,47 +1,43 @@
-import { Kettle } from "../Kettle"
-import { RecipeStep } from "../Recipe"
+import { Heater } from "../devices/Heater"
+import { Pump } from "../devices/Pump"
+import { Sensor } from "../devices/Sensor"
+import { RecipePhase } from "../recipes/Recipe"
+import { ConfigPhaseDefinition } from "../utils/ConfigDefinition"
 
-export enum PhaseState {
-  Active = 'ACTIVE',
-  Completed = 'COMPLETED',
-  Failed = 'FAILED'
-}
+export class Phase {
+  heaters: Array<Heater>
+  sensors: Array<Sensor>
+  pump: Pump
+  circulationPumps: Array<Pump>
 
-export abstract class Phase {
-  name : string = null
-  kettle : Kettle = null
-  state : PhaseState = null
-  currentStep : number = null
+  constructor(
+    readonly type: RecipePhase,
+    config: ConfigPhaseDefinition
+  ) {
+    this.heaters = config.heaters.map(config => {
+      return new Heater(config.identifier, config.powerOnCode, config.powerOffCode)
+    })
 
-  constructor (protected readonly steps: Array<RecipeStep>, readonly onFinishCallback) {
-    this.state = PhaseState.Active
-    this.currentStep = 0
+    this.sensors = config.sensors.map(identifier => {
+      return new Sensor(identifier, identifier)
+    })
+
+    this.circulationPumps = config.circulationPumps.map(config => {
+      return new Pump(config.identifier, config.powerOnCode, config.powerOffCode, 5)
+    })
+
+    if (config.pump) {
+      this.pump = new Pump(config.pump.identifier, config.pump.powerOnCode, config.pump.powerOffCode, 5)
+    }
   }
 
-  public nextPhase () : void {
-    this.state = PhaseState.Completed
-    this.onFinishCallback()
-  }
+  async getTemperature(): Promise<number> {
+    let temperature = 0
 
-  async tick(): Promise<void> {
-    if (this.steps.length <= this.currentStep) {
-      this.onPhaseCompleted()
-      return
+    for (const sensor of this.sensors) {
+      temperature += await sensor.getTemperature()
     }
 
-    if (!this.kettle.isBusy()) {
-      this.kettle.setTask(this.steps[this.currentStep], this.onTaskCompleted.bind(this))
-    }
-
-    this.kettle.tick()
-  }
-
-  private onTaskCompleted(): void {
-    this.currentStep++
-  }
-
-  private onPhaseCompleted(): void {
-    console.log(`Phase "${this.name}" completed.`)
-    this.nextPhase()
+    return temperature / this.sensors.length
   }
 }

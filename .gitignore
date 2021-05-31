@@ -30,3 +30,5 @@ lsp
 *.d.ts
 
 src/types/metaModelSchema.json
+
+.env

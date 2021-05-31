@@ -1,4 +1,4 @@
-import { Sensor } from '../src/Sensor'
+import { Sensor } from '../src/devices/Sensor'
 
 describe('Sensor', () => {
   it('should be instantiable', () => {

@@ -1,54 +1,143 @@
-import { Kettle } from "./Kettle";
-import { Recipe, RecipePhase } from "./Recipe";
-
-import WaterKettle from './hardware/WaterKettle'
+import { config } from "./config";
 import { Phase } from "./phases/Phase";
-import PhaseMap from "./phases/PhaseMap";
+import { Recipe, RecipePhase, RecipePhaseMap } from "./recipes/Recipe";
+import { Task } from "./tasks/Task";
 
 export class Brew {
-  kettles: Array<Kettle>
+  mainProcess = null          // interval reference
 
-  phase: Phase
-  nextPhase: RecipePhase
+  phase: Phase = null         // current brewing phase
 
-  mainProcess = null
+  tasks: Array<Task> = []     // tasks to complete within the current brewing phase
 
-  constructor(readonly recipe: Recipe) {
-    this.kettles = [WaterKettle]
+  tickInterval = 3000         // interval in ms for tick method
+
+  currentTask: Task = null    // current task to solve
+
+  /**
+   * Recives the recipe as input. Will directly start.
+   */
+  constructor(
+    readonly recipe: Recipe
+  ) {
+    this.start()
   }
 
+  /**
+   * Start by setting the first phase.
+   * Will also start the ticker that is called every x
+   * milliseconds in order to handle temperature etc.
+   */
   async start(): Promise<void> {
-    await this.check()
-    console.info(`All checks successful. Brew of recipe "${this.recipe.identifier}" starts`)
-
-    this.nextPhase = RecipePhase.PreHeat
-    this.startNextPhase()
+    await this.startNextPhase()
 
     this.mainProcess = setInterval(() => {
-      this.phase.tick()
-    }, 3000)
+      this.tick()
+    }, this.tickInterval)
   }
 
+  /**
+   * Called every <tickInterval> milliseconds.
+   * Handle the current state.
+   */
+  async tick(): Promise<void> {
+    // if no task is set - set the first one
+    if (!this.currentTask) {
+      if (!this.tasks.length) {
+        console.error(`Invalid recipe - no task provided for phase ${this.phase}.`)
+      } else {
+        await this.startTask(this.tasks[0])
+      }
+    }
+
+    this.solveTask()
+  }
+
+  async startTask(task: Task): Promise<void> {
+    this.currentTask = task
+
+    console.log(this.currentTask.activationLog(this.phase))
+
+    if (task.async) {
+      await this.onTaskSolved(task)
+    }
+  }
+
+  async solveTask(): Promise<void> {
+    if (!this.currentTask.startedAt) {
+      if (await this.currentTask.shouldStart(this.phase)) {
+        this.currentTask.startTask(this.phase)
+      } else {
+        this.currentTask.preStartTick(this.phase)
+      }
+    } else {
+      if (await this.currentTask.shouldEnd(this.phase)) {
+        this.currentTask.endTask(this.phase)
+        this.onTaskSolved(this.currentTask)
+      } else {
+        this.currentTask.tick(this.phase)
+      }
+    }
+  }
+
+  async onTaskSolved(task: Task): Promise<void> {
+    const nextIndex = this.tasks.indexOf(task) + 1
+
+    if (this.tasks.length > nextIndex) {
+      this.startTask(this.tasks[nextIndex])
+    } else {
+      this.onPhaseCompleted()
+    }
+  }
+
+  async onPhaseCompleted(): Promise<void> {
+    this.startNextPhase()
+  }
+
+  /**
+   * Stops the interval.
+   */
   async end(): Promise<void> {
     clearInterval(this.mainProcess)
-    console.info(`Brew completed`)
   }
 
-  async check(): Promise<void> {
-    for (const kettle of this.kettles) {
-      await kettle.check()
-    }
-  }
-
+  /**
+   * Determines the next phase.
+   */
   async startNextPhase(): Promise<void> {
-    if (!this.nextPhase) {
-      return this.end()
+    // if not yet started - set phase to PreHeat
+    if (!this.phase) {
+      this.setPhase(RecipePhase.PreHeat)
+      return console.log(`Starting new Phase "${RecipePhase.PreHeat}"`)
     }
 
-    console.log(`Starting new Phase "${this.nextPhase}"`)
+    // if no next phase is provided - end
+    if (!RecipePhaseMap[this.phase.type]) {
+      this.setPhase(null)
+      this.end()
+      return console.log(`All Phases completed.`)
+    }
 
-    const { phase, next } = PhaseMap[this.nextPhase]
-    this.phase = new phase(this.recipe[RecipePhase.PreHeat], this.startNextPhase.bind(this))
-    this.nextPhase = next
+    this.setPhase(RecipePhaseMap[this.phase.type])
+
+    return console.log(`Starting new Phase "${this.phase.type}"`)
+  }
+
+  /**
+   * Set the phase and the relevant tasks of the phase. 
+   */
+  async setPhase(phase: RecipePhase): Promise<void> {
+    if (phase) {
+      this.phase = new Phase(phase, config[phase])
+
+      if (Array.isArray(this.recipe[this.phase.type])) {
+        this.tasks = this.recipe[this.phase.type]
+      }
+
+      // todo - start circulisation pumps (& end previous)
+    } else {
+      this.phase = null
+      this.tasks = []
+    }
   }
 }

@@ -3,7 +3,7 @@ import * as path from 'path'
 import { execSync } from 'child_process'
 
 import { Device} from '../devices/Device'
-import { Sensor } from '../Sensor'
+import { Sensor } from '../devices/Sensor'
 
 const getSensorPrefix = () : string => {
   if (process.env.NODE_ENV === 'development') {
@@ -15,10 +15,10 @@ const getSensorPrefix = () : string => {
 
 const getExecCommand = () : string => {
   if (process.env.NODE_ENV === 'development') {
-    return path.join(__dirname, '..', '..', 'power.bat')
+    return path.join(__dirname, '..', '..', 'dev', 'power.bat')
   }
 
-  return '/home/pi/433Utils/RPi_utils/onOff'
+  return path.join(__dirname, '../', '../', 'bin', 'PowerControl')
 }
 
 export const ReadTemperature = async (sensor: Sensor): Promise<number> => {
